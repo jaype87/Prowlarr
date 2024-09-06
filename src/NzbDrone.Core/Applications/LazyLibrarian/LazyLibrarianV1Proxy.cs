@@ -96,6 +96,13 @@ namespace NzbDrone.Core.Applications.LazyLibrarian
                 { "dlpriority", CalculatePriority(indexer.Priority).ToString() }
             };
 
+            if (indexer.Type == LazyLibrarianProviderType.Torznab)
+            {
+                parameters.Add("seeders", indexer.MinimumSeeders.ToString());
+                parameters.Add("seed_ratio", indexer.SeedRatio.ToString());
+                parameters.Add("seed_duration", indexer.SeedTime.ToString());
+            }
+
             var request = BuildRequest(settings, "/api", "addProvider", HttpMethod.Get, parameters);
             CheckForError(Execute<LazyLibrarianStatus>(request));
             return indexer;
@@ -114,6 +121,13 @@ namespace NzbDrone.Core.Applications.LazyLibrarian
                 { "altername", indexer.Altername },
                 { "dlpriority", CalculatePriority(indexer.Priority).ToString() }
             };
+
+            if (indexer.Type == LazyLibrarianProviderType.Torznab)
+            {
+                parameters.Add("seeders", indexer.MinimumSeeders.ToString());
+                parameters.Add("seed_ratio", indexer.SeedRatio.ToString());
+                parameters.Add("seed_duration", indexer.SeedTime.ToString());
+            }
 
             var request = BuildRequest(settings, "/api", "changeProvider", HttpMethod.Get, parameters);
             CheckForError(Execute<LazyLibrarianStatus>(request));

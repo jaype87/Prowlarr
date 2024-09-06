@@ -165,6 +165,13 @@ namespace NzbDrone.Core.Applications.LazyLibrarian
                 Priority = indexer.Priority
             };
 
+            if (indexer.Protocol == DownloadProtocol.Torrent)
+            {
+                lazyLibrarianIndexer.MinimumSeeders = ((ITorrentIndexerSettings)indexer.Settings).TorrentBaseSettings.AppMinimumSeeders ?? indexer.AppProfile.Value.MinimumSeeders;
+                lazyLibrarianIndexer.SeedRatio = ((ITorrentIndexerSettings)indexer.Settings).TorrentBaseSettings.SeedRatio.GetValueOrDefault();
+                lazyLibrarianIndexer.SeedTime = ((ITorrentIndexerSettings)indexer.Settings).TorrentBaseSettings.SeedTime.GetValueOrDefault();
+            }
+
             return lazyLibrarianIndexer;
         }
     }
