@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using FluentValidation.Results;
@@ -99,7 +100,7 @@ namespace NzbDrone.Core.Applications.LazyLibrarian
             if (indexer.Type == LazyLibrarianProviderType.Torznab)
             {
                 parameters.Add("seeders", indexer.MinimumSeeders.ToString());
-                parameters.Add("seed_ratio", indexer.SeedRatio.ToString());
+                parameters.Add("seed_ratio", indexer.SeedRatio.ToString(CultureInfo.InvariantCulture));
                 parameters.Add("seed_duration", indexer.SeedTime.ToString());
             }
 
@@ -125,7 +126,7 @@ namespace NzbDrone.Core.Applications.LazyLibrarian
             if (indexer.Type == LazyLibrarianProviderType.Torznab)
             {
                 parameters.Add("seeders", indexer.MinimumSeeders.ToString());
-                parameters.Add("seed_ratio", indexer.SeedRatio.ToString());
+                parameters.Add("seed_ratio", indexer.SeedRatio.ToString(CultureInfo.InvariantCulture));
                 parameters.Add("seed_duration", indexer.SeedTime.ToString());
             }
 
