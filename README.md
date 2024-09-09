@@ -1,7 +1,7 @@
 # Prowlarr
 
 [![Build Status](https://dev.azure.com/Prowlarr/Prowlarr/_apis/build/status/Prowlarr.Prowlarr?branchName=develop)](https://dev.azure.com/Prowlarr/Prowlarr/_build/latest?definitionId=1&branchName=develop)
-[![Translated](https://translate.servarr.com/widgets/servarr/-/prowlarr/svg-badge.svg)](https://translate.servarr.com/engage/prowlarr/?utm_source=widget)
+[![Translation status](https://translate.servarr.com/widget/servarr/prowlarr/svg-badge.svg)](https://translate.servarr.com/engage/servarr/?utm_source=widget)
 [![Docker Pulls](https://img.shields.io/docker/pulls/hotio/prowlarr.svg)](https://wiki.servarr.com/prowlarr/installation/docker)
 ![Github Downloads](https://img.shields.io/github/downloads/Prowlarr/Prowlarr/total.svg)
 [![Backers on Open Collective](https://opencollective.com/Prowlarr/backers/badge.svg)](#backers)
