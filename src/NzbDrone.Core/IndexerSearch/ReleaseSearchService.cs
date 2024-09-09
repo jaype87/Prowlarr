@@ -7,6 +7,7 @@ using NzbDrone.Common.Instrumentation.Extensions;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
 using NzbDrone.Core.Indexers.Events;
+using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Parser;
@@ -192,9 +193,24 @@ namespace NzbDrone.Core.IndexerSearch
 
             var tasks = indexers.Select(x => DispatchIndexer(searchAction, x, criteriaBase));
 
-            var batch = await Task.WhenAll(tasks);
-
-            var reports = batch.SelectMany(x => x).ToList();
+            IList<ReleaseInfo> reports;
+            try
+            {
+                var batch = await Task.WhenAll(tasks);
+                reports = batch.SelectMany(x => x).ToList();
+            }
+            catch (UnsupportedCapabilitiesException)
+            {
+                // if at least one indexer returned results, use those, otherwise raise again
+                if (tasks.Any(x => x.Status == TaskStatus.RanToCompletion))
+                {
+                    reports = tasks.Where(x => x.Status == TaskStatus.RanToCompletion).SelectMany(x => x.Result).ToList();
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             _logger.ProgressDebug("Total of {0} reports were found for {1} from {2} indexer(s)", reports.Count, criteriaBase, indexers.Count);
 
@@ -208,67 +224,57 @@ namespace NzbDrone.Core.IndexerSearch
                 return Array.Empty<ReleaseInfo>();
             }
 
-            try
+            var indexerReports = await searchAction(indexer);
+
+            var releases = indexerReports.Releases;
+
+            //Filter results to only those in searched categories
+            if (criteriaBase.Categories.Length > 0)
             {
-                var indexerReports = await searchAction(indexer);
+                var expandedQueryCats = indexer.GetCapabilities().Categories.ExpandTorznabQueryCategories(criteriaBase.Categories);
 
-                var releases = indexerReports.Releases;
+                releases = releases.Where(result => result.Categories?.Any() != true || expandedQueryCats.Intersect(result.Categories.Select(c => c.Id)).Any()).ToList();
 
-                //Filter results to only those in searched categories
-                if (criteriaBase.Categories.Length > 0)
+                if (releases.Count != indexerReports.Releases.Count)
                 {
-                    var expandedQueryCats = indexer.GetCapabilities().Categories.ExpandTorznabQueryCategories(criteriaBase.Categories);
-
-                    releases = releases.Where(result => result.Categories?.Any() != true || expandedQueryCats.Intersect(result.Categories.Select(c => c.Id)).Any()).ToList();
-
-                    if (releases.Count != indexerReports.Releases.Count)
-                    {
-                        _logger.Trace("{0} releases from {1} ({2}) which didn't contain search categories [{3}] were filtered", indexerReports.Releases.Count - releases.Count, ((IndexerDefinition)indexer.Definition).Name, indexer.Name, string.Join(", ", expandedQueryCats));
-                    }
+                    _logger.Trace("{0} releases from {1} ({2}) which didn't contain search categories [{3}] were filtered", indexerReports.Releases.Count - releases.Count, ((IndexerDefinition)indexer.Definition).Name, indexer.Name, string.Join(", ", expandedQueryCats));
                 }
-
-                if (criteriaBase.MinAge is > 0)
-                {
-                    var cutoffDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(criteriaBase.MinAge.Value));
-
-                    releases = releases.Where(r => r.PublishDate <= cutoffDate).ToList();
-                }
-
-                if (criteriaBase.MaxAge is > 0)
-                {
-                    var cutoffDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(criteriaBase.MaxAge.Value));
-
-                    releases = releases.Where(r => r.PublishDate >= cutoffDate).ToList();
-                }
-
-                if (criteriaBase.MinSize is > 0)
-                {
-                    var minSize = criteriaBase.MinSize.Value;
-
-                    releases = releases.Where(r => r.Size >= minSize).ToList();
-                }
-
-                if (criteriaBase.MaxSize is > 0)
-                {
-                    var maxSize = criteriaBase.MaxSize.Value;
-
-                    releases = releases.Where(r => r.Size <= maxSize).ToList();
-                }
-
-                foreach (var query in indexerReports.Queries)
-                {
-                    _eventAggregator.PublishEvent(new IndexerQueryEvent(indexer.Definition.Id, criteriaBase, query));
-                }
-
-                return releases;
-            }
-            catch (Exception e)
-            {
-                _eventAggregator.PublishEvent(new IndexerQueryEvent(indexer.Definition.Id, criteriaBase, new IndexerQueryResult()));
-                _logger.Error(e, "Error while searching for {0}", criteriaBase);
             }
 
-            return Array.Empty<ReleaseInfo>();
+            if (criteriaBase.MinAge is > 0)
+            {
+                var cutoffDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(criteriaBase.MinAge.Value));
+
+                releases = releases.Where(r => r.PublishDate <= cutoffDate).ToList();
+            }
+
+            if (criteriaBase.MaxAge is > 0)
+            {
+                var cutoffDate = DateTime.UtcNow.Subtract(TimeSpan.FromDays(criteriaBase.MaxAge.Value));
+
+                releases = releases.Where(r => r.PublishDate >= cutoffDate).ToList();
+            }
+
+            if (criteriaBase.MinSize is > 0)
+            {
+                var minSize = criteriaBase.MinSize.Value;
+
+                releases = releases.Where(r => r.Size >= minSize).ToList();
+            }
+
+            if (criteriaBase.MaxSize is > 0)
+            {
+                var maxSize = criteriaBase.MaxSize.Value;
+
+                releases = releases.Where(r => r.Size <= maxSize).ToList();
+            }
+
+            foreach (var query in indexerReports.Queries)
+            {
+                _eventAggregator.PublishEvent(new IndexerQueryEvent(indexer.Definition.Id, criteriaBase, query));
+            }
+
+            return releases;
         }
 
         private List<ReleaseInfo> DeDupeReleases(IList<ReleaseInfo> releases)

@@ -15,6 +15,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Download;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
+using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.ThingiProvider.Status;
@@ -177,7 +178,15 @@ namespace NzbDrone.Api.V1.Indexers
                 case "music":
                 case "book":
                 case "movie":
-                    var results = await _releaseSearchService.Search(request, new List<int> { indexerDef.Id }, false);
+                    NewznabResults results;
+                    try
+                    {
+                        results = await _releaseSearchService.Search(request, new List<int> { indexerDef.Id }, false);
+                    }
+                    catch (UnsupportedCapabilitiesException e)
+                    {
+                        return CreateResponse(CreateErrorXML(201, e.Message)); // 201: incorrect parameter
+                    }
 
                     var blockedIndexerStatusPost = GetBlockedIndexerStatus(indexer);
 

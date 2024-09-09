@@ -112,9 +112,8 @@ namespace NzbDrone.Core.Indexers
                 (searchCriteria.Genre.IsNotNullOrWhiteSpace() && !caps.MovieSearchGenreAvailable) ||
                 (searchCriteria.Year.HasValue && !caps.MovieSearchYearAvailable))
             {
-                _logger.Debug("Movie search skipped due to unsupported capabilities used: {0}", Definition.Name);
-
-                return Task.FromResult(new IndexerPageableQueryResult());
+                _logger.Error("Movie search used unsupported capabilities: {0}", Definition.Name);
+                throw new UnsupportedCapabilitiesException("Unsupported capabilities used: {0}", Definition.Name);
             }
 
             return FetchReleases(g => SetCookieFunctions(g).GetSearchRequests(searchCriteria), searchCriteria);
@@ -141,9 +140,8 @@ namespace NzbDrone.Core.Indexers
                 (searchCriteria.Genre.IsNotNullOrWhiteSpace() && !caps.MusicSearchGenreAvailable) ||
                 (searchCriteria.Year.HasValue && !caps.MusicSearchYearAvailable))
             {
-                _logger.Debug("Music search skipped due to unsupported capabilities used: {0}", Definition.Name);
-
-                return Task.FromResult(new IndexerPageableQueryResult());
+                _logger.Error("Music search used unsupported capabilities: {0}", Definition.Name);
+                throw new UnsupportedCapabilitiesException("Unsupported capabilities used: {0}", Definition.Name);
             }
 
             return FetchReleases(g => SetCookieFunctions(g).GetSearchRequests(searchCriteria), searchCriteria);
@@ -173,9 +171,8 @@ namespace NzbDrone.Core.Indexers
                 (searchCriteria.Genre.IsNotNullOrWhiteSpace() && !caps.TvSearchGenreAvailable) ||
                 (searchCriteria.Year.HasValue && !caps.TvSearchYearAvailable))
             {
-                _logger.Debug("TV search skipped due to unsupported capabilities used: {0}", Definition.Name);
-
-                return Task.FromResult(new IndexerPageableQueryResult());
+                _logger.Error("TV search used unsupported capabilities: {0}", Definition.Name);
+                throw new UnsupportedCapabilitiesException("Unsupported capabilities used: {0}", Definition.Name);
             }
 
             return FetchReleases(g => SetCookieFunctions(g).GetSearchRequests(searchCriteria), searchCriteria);
@@ -201,9 +198,8 @@ namespace NzbDrone.Core.Indexers
                 (searchCriteria.Genre.IsNotNullOrWhiteSpace() && !caps.BookSearchGenreAvailable) ||
                 (searchCriteria.Year.HasValue && !caps.BookSearchYearAvailable))
             {
-                _logger.Debug("Book search skipped due to unsupported capabilities used: {0}", Definition.Name);
-
-                return Task.FromResult(new IndexerPageableQueryResult());
+                _logger.Error("Book search used unsupported capabilities: {0}", Definition.Name);
+                throw new UnsupportedCapabilitiesException("Unsupported capabilities used: {0}", Definition.Name);
             }
 
             return FetchReleases(g => SetCookieFunctions(g).GetSearchRequests(searchCriteria), searchCriteria);
